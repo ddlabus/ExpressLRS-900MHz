@@ -74,7 +74,7 @@ jobs:
 
       - name: Install PlatformIO
         if: steps.check_built.outputs.should_build == 'true'
-        run: pip install platformio
+        run: pip install platformio intelhex
 
       - name: Configure build
         if: steps.check_built.outputs.should_build == 'true'

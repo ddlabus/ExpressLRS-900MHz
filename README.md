@@ -2,19 +2,21 @@
 
 Custom ELRS firmware for E32-900M30S module (SX1276, 1W output).
 
-![E32-900M30S Module](https://www.cdebyte.com/u_file/2010/photo/7ba4b2da2f.png)
+![E32-900M30S Module](images/E32-900M30S.jpg)
 
 ## Hardware
 
 ### Receiver (RX)
-- **MCU:** ESP-01F (ESP8285)
+- **MCU:** ESP8285
 - **Radio:** E32-900M30S (SX1276, 30dBm/1W)
 
-![ESP-01F](https://www.cdebyte.com/u_file/2212/photo/4b67b3f116.png)
+![ESP8285](images/ESP8285M2.jpg)
 
 ### Transmitter (TX)
-- **MCU:** ESP32-WROOM-32E
+- **MCU:** ESP32 WEMOS Lite
 - **Radio:** E32-900M30S (SX1276, 30dBm/1W)
+
+![ESP32 WEMOS Lite](images/ESP32_WEMOS_LITE.jpg)
 
 ## Frequency
 - Band: FCC915 (902-928MHz)

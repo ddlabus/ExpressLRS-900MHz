@@ -1,0 +1,185 @@
+name: Auto Build on ELRS Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM_REPO: ExpressLRS/ExpressLRS
+  REGULATORY_DOMAIN: -DRegulatory_Domain_FCC_915
+  MODULE_NAME: E32-900M30S
+  BAND_NAME: FCC915
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get latest ELRS release
+        id: elrs_release
+        run: |
+          RELEASE_DATA=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/latest)
+          TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+          PUBLISHED=$(echo "$RELEASE_DATA" | jq -r '.published_at')
+          PRERELEASE=$(echo "$RELEASE_DATA" | jq -r '.prerelease')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+
+      - name: Check if stable and older than 7 days
+        id: check_age
+        run: |
+          if [ "${{ steps.elrs_release.outputs.prerelease }}" == "true" ]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          PUBLISHED="${{ steps.elrs_release.outputs.published }}"
+          PUBLISHED_TS=$(date -d "$PUBLISHED" +%s)
+          NOW_TS=$(date +%s)
+          AGE_DAYS=$(( (NOW_TS - PUBLISHED_TS) / 86400 ))
+          if [ $AGE_DAYS -lt 7 ]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if already built
+        id: check_built
+        if: steps.check_age.outputs.should_build == 'true'
+        run: |
+          TAG="${{ steps.elrs_release.outputs.tag }}"
+          MY_RELEASE="ELRS_${TAG}_${{ env.BAND_NAME }}"
+          EXISTING=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/tags/$MY_RELEASE)
+          if [ "$EXISTING" == "200" ]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "release_tag=$MY_RELEASE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout upstream ELRS
+        if: steps.check_built.outputs.should_build == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPO }}
+          ref: ${{ steps.elrs_release.outputs.tag }}
+
+      - name: Set up Python
+        if: steps.check_built.outputs.should_build == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        if: steps.check_built.outputs.should_build == 'true'
+        run: pip install platformio
+
+      - name: Configure build
+        if: steps.check_built.outputs.should_build == 'true'
+        working-directory: src
+        run: |
+          sed -i 's/^-DRegulatory_Domain_.*/#&/' user_defines.txt
+          echo "${{ env.REGULATORY_DOMAIN }}" >> user_defines.txt
+          echo "-DLOCK_ON_FIRST_CONNECTION" >> user_defines.txt
+          echo "-DAUTO_WIFI_ON_INTERVAL=60" >> user_defines.txt
+
+      - name: Build RX firmware (ESP8285)
+        if: steps.check_built.outputs.should_build == 'true'
+        working-directory: src
+        run: |
+          pio run -e Unified_ESP8285_900_RX_via_UART
+          cp .pio/build/Unified_ESP8285_900_RX_via_UART/firmware.bin \
+             ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP8285_${{ env.BAND_NAME }}.bin
+
+      - name: Build TX firmware (ESP32)
+        if: steps.check_built.outputs.should_build == 'true'
+        working-directory: src
+        run: |
+          pio run -e Unified_ESP32_900_TX_via_UART
+          cp .pio/build/Unified_ESP32_900_TX_via_UART/firmware.bin \
+             ../ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
+
+      - name: Create hardware layout files
+        if: steps.check_built.outputs.should_build == 'true'
+        run: |
+          cat > ${{ env.MODULE_NAME }}_RX.json << 'EOF'
+          {
+              "product_name": "DIY E32-900M30S RX",
+              "serial_rx": 3,
+              "serial_tx": 1,
+              "radio_dio0": 4,
+              "radio_dio1": 5,
+              "radio_miso": 12,
+              "radio_mosi": 13,
+              "radio_nss": 15,
+              "radio_sck": 14,
+              "power_rxen": 0,
+              "power_txen": 2,
+              "power_min": 0,
+              "power_high": 2,
+              "power_max": 2,
+              "power_default": 2,
+              "power_control": 0,
+              "power_values": [120, 124, 127],
+              "led": 16
+          }
+          EOF
+          cat > ${{ env.MODULE_NAME }}_TX.json << 'EOF'
+          {
+              "product_name": "DIY E32-900M30S TX",
+              "serial_rx": 2,
+              "serial_tx": 2,
+              "radio_dio0": 26,
+              "radio_dio1": 25,
+              "radio_miso": 19,
+              "radio_mosi": 23,
+              "radio_nss": 5,
+              "radio_rst": 14,
+              "radio_sck": 18,
+              "power_rxen": 13,
+              "power_txen": 12,
+              "power_apc2": 25,
+              "power_min": 2,
+              "power_high": 4,
+              "power_max": 6,
+              "power_default": 2,
+              "power_control": 3,
+              "power_values": [41, 60, 73, 90, 110, 132, 190],
+              "led": 22,
+              "use_backpack": false,
+              "misc_fan_en": 17
+          }
+          EOF
+
+      - name: Create Release
+        if: steps.check_built.outputs.should_build == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.check_built.outputs.release_tag }}
+          name: "ELRS ${{ steps.elrs_release.outputs.tag }} for ${{ env.MODULE_NAME }} (${{ env.BAND_NAME }})"
+          body: |
+            ## Auto-built from ELRS ${{ steps.elrs_release.outputs.tag }}
+
+            Firmware for ${{ env.MODULE_NAME }} module (SX1276, 1W output).
+
+            ### Hardware
+            - **RX:** ESP-01F (ESP8285) + ${{ env.MODULE_NAME }}
+            - **TX:** ESP32-WROOM-32E + ${{ env.MODULE_NAME }}
+
+            ### Frequency
+            - Band: ${{ env.BAND_NAME }} (902-928MHz)
+
+            ### Flashing
+            Use [esptool](https://github.com/espressif/esptool) or ELRS Configurator.
+
+            ---
+            *Auto-built by GitHub Actions*
+          files: |
+            ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP8285_${{ env.BAND_NAME }}.bin
+            ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
+            ${{ env.MODULE_NAME }}_RX.json
+            ${{ env.MODULE_NAME }}_TX.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

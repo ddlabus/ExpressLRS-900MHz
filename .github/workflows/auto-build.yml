@@ -85,13 +85,13 @@ jobs:
           echo "-DLOCK_ON_FIRST_CONNECTION" >> user_defines.txt
           echo "-DAUTO_WIFI_ON_INTERVAL=60" >> user_defines.txt
 
-      - name: Build RX firmware (ESP8285)
+      - name: Build RX firmware (ESP32-C3)
         if: steps.check_built.outputs.should_build == 'true'
         working-directory: src
         run: |
-          pio run -e Unified_ESP8285_900_RX_via_UART
-          cp .pio/build/Unified_ESP8285_900_RX_via_UART/firmware.bin \
-             ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP8285_${{ env.BAND_NAME }}.bin
+          pio run -e Unified_ESP32C3_900_RX_via_UART
+          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/firmware.bin \
+             ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
 
       - name: Build TX firmware (ESP32)
         if: steps.check_built.outputs.should_build == 'true'
@@ -104,26 +104,27 @@ jobs:
       - name: Create hardware layout files
         if: steps.check_built.outputs.should_build == 'true'
         run: |
-          cat > ${{ env.MODULE_NAME }}_RX.json << 'EOF'
+          cat > ESP32C3_SuperMini_RX.json << 'EOF'
           {
-              "product_name": "DIY E32-900M30S RX",
-              "serial_rx": 3,
-              "serial_tx": 1,
-              "radio_dio0": 4,
-              "radio_dio1": 5,
-              "radio_miso": 12,
-              "radio_mosi": 13,
-              "radio_nss": 15,
-              "radio_sck": 14,
-              "power_rxen": 0,
-              "power_txen": 2,
+              "product_name": "DIY ESP32-C3 SuperMini RX",
+              "serial_rx": 20,
+              "serial_tx": 21,
+              "radio_dio0": 1,
+              "radio_dio1": 2,
+              "radio_miso": 5,
+              "radio_mosi": 4,
+              "radio_nss": 7,
+              "radio_rst": 3,
+              "radio_sck": 6,
+              "power_rxen": 10,
+              "power_txen": 0,
               "power_min": 0,
               "power_high": 2,
               "power_max": 2,
               "power_default": 2,
               "power_control": 0,
               "power_values": [120, 124, 127],
-              "led": 16
+              "led": 8
           }
           EOF
           cat > ${{ env.MODULE_NAME }}_TX.json << 'EOF'
@@ -165,8 +166,8 @@ jobs:
             Firmware for ${{ env.MODULE_NAME }} module (SX1276, 1W output).
 
             ### Hardware
-            - **RX:** ESP-01F (ESP8285) + ${{ env.MODULE_NAME }}
-            - **TX:** ESP32-WROOM-32E + ${{ env.MODULE_NAME }}
+            - **RX:** ESP32-C3 SuperMini + ${{ env.MODULE_NAME }}
+            - **TX:** ESP32 WEMOS Lite + ${{ env.MODULE_NAME }}
 
             ### Frequency
             - Band: ${{ env.BAND_NAME }} (902-928MHz)
@@ -177,9 +178,9 @@ jobs:
             ---
             *Auto-built by GitHub Actions*
           files: |
-            ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP8285_${{ env.BAND_NAME }}.bin
+            ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
             ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
-            ${{ env.MODULE_NAME }}_RX.json
+            ESP32C3_SuperMini_RX.json
             ${{ env.MODULE_NAME }}_TX.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

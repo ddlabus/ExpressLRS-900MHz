@@ -10,7 +10,7 @@ Custom ELRS firmware for E32-900M30S module (SX1276, 1W output).
 - **MCU:** ESP32-C3 SuperMini
 - **Radio:** E32-900M30S (SX1276, 30dBm/1W)
 
-![ESP32-C3 SuperMini](https://raw.githubusercontent.com/ddlabus/ExpressLRS-900MHz/main/images/ESP32-C3.jpg)
+![ESP32-C3 SuperMini](https://raw.githubusercontent.com/ddlabus/ExpressLRS-900MHz/main/images/ESP32-C3.avif)
 
 ### Transmitter (TX)
 - **MCU:** ESP32 WEMOS Lite

@@ -140,6 +140,43 @@ jobs:
           cp src/hardware/ESP32C3_SuperMini_RX.json .
           cp src/hardware/${{ env.MODULE_NAME }}_TX.json .
 
+      - name: Register custom hardware in targets.json
+        if: steps.check_built.outputs.should_build == 'true'
+        run: |
+          python3 << 'PYTHON'
+          import json
+          with open('src/hardware/targets.json', 'r') as f:
+              targets = json.load(f)
+
+          if 'diy' not in targets:
+              targets['diy'] = {}
+          if 'rx' not in targets['diy']:
+              targets['diy']['rx'] = {}
+          if 'tx' not in targets['diy']:
+              targets['diy']['tx'] = {}
+
+          targets['diy']['rx']['esp32c3_supermini_900'] = {
+              "product_name": "DIY ESP32-C3 SuperMini RX (E32-900M30S)",
+              "lua_name": "C3 900 RX",
+              "layout_file": "ESP32C3_SuperMini_RX.json",
+              "upload_methods": ["uart", "wifi"],
+              "platform": "esp32-c3",
+              "firmware": "Unified_ESP32C3_900_RX"
+          }
+
+          targets['diy']['tx']['esp32_e32_900m30s'] = {
+              "product_name": "DIY ESP32 TX (E32-900M30S)",
+              "lua_name": "ESP32 900 TX",
+              "layout_file": "E32-900M30S_TX.json",
+              "upload_methods": ["uart", "wifi"],
+              "platform": "esp32",
+              "firmware": "Unified_ESP32_900_TX"
+          }
+
+          with open('src/hardware/targets.json', 'w') as f:
+              json.dump(targets, f, indent=2)
+          PYTHON
+
       - name: Configure build
         if: steps.check_built.outputs.should_build == 'true'
         working-directory: src

@@ -86,34 +86,34 @@ jobs:
       - name: Create hardware layout files
         if: steps.check_built.outputs.should_build == 'true'
         run: |
-          cat > src/hardware/ESP32C3_SuperMini_RX.json << 'EOF'
+          cat > src/hardware/ESP32_E32-900M30S_RX.json << 'EOF'
           {
-              "platform": "esp32-c3",
-              "product_name": "DIY ESP32-C3 SuperMini RX",
-              "serial_rx": 20,
-              "serial_tx": 21,
-              "radio_dio0": 1,
-              "radio_dio1": 2,
-              "radio_miso": 5,
-              "radio_mosi": 4,
-              "radio_nss": 7,
-              "radio_rst": 3,
-              "radio_sck": 6,
-              "power_rxen": 10,
-              "power_txen": 0,
+              "platform": "esp32",
+              "product_name": "DIY ESP32 RX (E32-900M30S)",
+              "serial_rx": 13,
+              "serial_tx": 13,
+              "radio_dio0": 26,
+              "radio_dio1": 25,
+              "radio_miso": 19,
+              "radio_mosi": 23,
+              "radio_nss": 5,
+              "radio_rst": 14,
+              "radio_sck": 18,
+              "power_rxen": 27,
+              "power_txen": 4,
               "power_min": 0,
               "power_high": 2,
               "power_max": 2,
               "power_default": 2,
               "power_control": 0,
               "power_values": [120, 124, 127],
-              "led": 8
+              "led": 22
           }
           EOF
           cat > src/hardware/${{ env.MODULE_NAME }}_TX.json << 'EOF'
           {
               "platform": "esp32",
-              "product_name": "DIY E32-900M30S TX",
+              "product_name": "DIY ESP32 TX (E32-900M30S)",
               "serial_rx": 2,
               "serial_tx": 2,
               "radio_dio0": 26,
@@ -137,7 +137,7 @@ jobs:
               "misc_fan_en": 17
           }
           EOF
-          cp src/hardware/ESP32C3_SuperMini_RX.json .
+          cp src/hardware/ESP32_E32-900M30S_RX.json .
           cp src/hardware/${{ env.MODULE_NAME }}_TX.json .
 
       - name: Register custom hardware in targets.json
@@ -155,16 +155,16 @@ jobs:
           if 'tx' not in targets['diy']:
               targets['diy']['tx'] = {}
 
-          targets['diy']['rx']['esp32c3_supermini_900'] = {
-              "product_name": "DIY ESP32-C3 SuperMini RX (E32-900M30S)",
-              "lua_name": "C3 900 RX",
-              "layout_file": "ESP32C3_SuperMini_RX.json",
+          targets['diy']['rx']['esp32_e32_900m30s'] = {
+              "product_name": "DIY ESP32 RX (E32-900M30S)",
+              "lua_name": "ESP32 900 RX",
+              "layout_file": "ESP32_E32-900M30S_RX.json",
               "upload_methods": ["uart", "wifi"],
-              "platform": "esp32-c3",
-              "firmware": "Unified_ESP32C3_900_RX"
+              "platform": "esp32",
+              "firmware": "Unified_ESP32_900_RX"
           }
 
-          targets['diy']['tx']['esp32_e32_900m30s'] = {
+          targets['diy']['tx']['esp32_e32_900m30s_tx'] = {
               "product_name": "DIY ESP32 TX (E32-900M30S)",
               "lua_name": "ESP32 900 TX",
               "layout_file": "E32-900M30S_TX.json",
@@ -186,16 +186,16 @@ jobs:
           echo "-DLOCK_ON_FIRST_CONNECTION" >> user_defines.txt
           echo "-DAUTO_WIFI_ON_INTERVAL=60" >> user_defines.txt
 
-      - name: Build RX firmware (ESP32-C3)
+      - name: Build RX firmware (ESP32)
         if: steps.check_built.outputs.should_build == 'true'
         working-directory: src
         run: |
-          pio run -e Unified_ESP32C3_900_RX_via_UART
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/firmware.bin \
-             ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/bootloader.bin ../bootloader_rx.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/partitions.bin ../partitions_rx.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/boot_app0.bin ../boot_app0_rx.bin
+          pio run -e Unified_ESP32_900_RX_via_UART
+          cp .pio/build/Unified_ESP32_900_RX_via_UART/firmware.bin \
+             ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32_${{ env.BAND_NAME }}.bin
+          cp .pio/build/Unified_ESP32_900_RX_via_UART/bootloader.bin ../bootloader_rx.bin
+          cp .pio/build/Unified_ESP32_900_RX_via_UART/partitions.bin ../partitions_rx.bin
+          cp .pio/build/Unified_ESP32_900_RX_via_UART/boot_app0.bin ../boot_app0_rx.bin
 
       - name: Build TX firmware (ESP32)
         if: steps.check_built.outputs.should_build == 'true'
@@ -220,19 +220,19 @@ jobs:
             Firmware for ${{ env.MODULE_NAME }} module (SX1276, 1W output).
 
             ### Hardware
-            - **RX:** ESP32-C3 SuperMini + ${{ env.MODULE_NAME }}
-            - **TX:** ESP32 WEMOS Lite + ${{ env.MODULE_NAME }}
+            - **RX:** ESP32 (WROOM/DevKit) + ${{ env.MODULE_NAME }}
+            - **TX:** ESP32 (WROOM/DevKit) + ${{ env.MODULE_NAME }}
 
             ### Frequency
             - Band: ${{ env.BAND_NAME }} (902-928MHz)
 
-            ### Flashing RX (ESP32-C3)
+            ### Flashing RX (ESP32)
             ```bash
-            esptool.py --chip esp32c3 write_flash \
-                0x0 bootloader_rx.bin \
+            esptool.py --chip esp32 write_flash \
+                0x1000 bootloader_rx.bin \
                 0x8000 partitions_rx.bin \
                 0xe000 boot_app0_rx.bin \
-                0x10000 ELRS_*_RX_ESP32C3_*.bin
+                0x10000 ELRS_*_RX_ESP32_*.bin
             ```
 
             ### Flashing TX (ESP32)
@@ -250,12 +250,12 @@ jobs:
             bootloader_rx.bin
             partitions_rx.bin
             boot_app0_rx.bin
-            ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
+            ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32_${{ env.BAND_NAME }}.bin
             bootloader_tx.bin
             partitions_tx.bin
             boot_app0_tx.bin
             ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
-            ESP32C3_SuperMini_RX.json
+            ESP32_E32-900M30S_RX.json
             ${{ env.MODULE_NAME }}_TX.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

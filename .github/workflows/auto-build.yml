@@ -65,6 +65,7 @@ jobs:
         with:
           repository: ${{ env.UPSTREAM_REPO }}
           ref: ${{ steps.elrs_release.outputs.tag }}
+          submodules: recursive
 
       - name: Set up Python
         if: steps.check_built.outputs.should_build == 'true'

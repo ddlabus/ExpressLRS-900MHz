@@ -86,7 +86,8 @@ jobs:
       - name: Create hardware layout files
         if: steps.check_built.outputs.should_build == 'true'
         run: |
-          cat > src/hardware/ESP32_E32-900M30S_RX.json << 'EOF'
+          mkdir -p src/hardware/RX src/hardware/TX
+          cat > src/hardware/RX/ESP32_E32-900M30S_RX.json << 'EOF'
           {
               "platform": "esp32",
               "product_name": "DIY ESP32 RX (E32-900M30S)",
@@ -110,7 +111,7 @@ jobs:
               "led": 22
           }
           EOF
-          cat > src/hardware/${{ env.MODULE_NAME }}_TX.json << 'EOF'
+          cat > src/hardware/TX/${{ env.MODULE_NAME }}_TX.json << 'EOF'
           {
               "platform": "esp32",
               "product_name": "DIY ESP32 TX (E32-900M30S)",
@@ -137,8 +138,8 @@ jobs:
               "misc_fan_en": 17
           }
           EOF
-          cp src/hardware/ESP32_E32-900M30S_RX.json .
-          cp src/hardware/${{ env.MODULE_NAME }}_TX.json .
+          cp src/hardware/RX/ESP32_E32-900M30S_RX.json .
+          cp src/hardware/TX/${{ env.MODULE_NAME }}_TX.json .
 
       - name: Register custom hardware in targets.json
         if: steps.check_built.outputs.should_build == 'true'

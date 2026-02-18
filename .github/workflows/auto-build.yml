@@ -65,7 +65,13 @@ jobs:
         with:
           repository: ${{ env.UPSTREAM_REPO }}
           ref: ${{ steps.elrs_release.outputs.tag }}
-          submodules: recursive
+
+      - name: Checkout hardware definitions
+        if: steps.check_built.outputs.should_build == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ExpressLRS/targets
+          path: src/hardware
 
       - name: Set up Python
         if: steps.check_built.outputs.should_build == 'true'
@@ -80,7 +86,6 @@ jobs:
       - name: Create hardware layout files
         if: steps.check_built.outputs.should_build == 'true'
         run: |
-          mkdir -p src/hardware
           cat > src/hardware/ESP32C3_SuperMini_RX.json << 'EOF'
           {
               "platform": "esp32-c3",

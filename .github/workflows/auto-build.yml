@@ -92,9 +92,9 @@ jobs:
           pio run -e Unified_ESP32C3_900_RX_via_UART
           cp .pio/build/Unified_ESP32C3_900_RX_via_UART/firmware.bin \
              ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/bootloader.bin ../bootloader.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/partitions.bin ../partitions.bin
-          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/boot_app0.bin ../boot_app0.bin
+          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/bootloader.bin ../bootloader_rx.bin
+          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/partitions.bin ../partitions_rx.bin
+          cp .pio/build/Unified_ESP32C3_900_RX_via_UART/boot_app0.bin ../boot_app0_rx.bin
 
       - name: Build TX firmware (ESP32)
         if: steps.check_built.outputs.should_build == 'true'
@@ -103,6 +103,9 @@ jobs:
           pio run -e Unified_ESP32_900_TX_via_UART
           cp .pio/build/Unified_ESP32_900_TX_via_UART/firmware.bin \
              ../ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
+          cp .pio/build/Unified_ESP32_900_TX_via_UART/bootloader.bin ../bootloader_tx.bin
+          cp .pio/build/Unified_ESP32_900_TX_via_UART/partitions.bin ../partitions_tx.bin
+          cp .pio/build/Unified_ESP32_900_TX_via_UART/boot_app0.bin ../boot_app0_tx.bin
 
       - name: Create hardware layout files
         if: steps.check_built.outputs.should_build == 'true'
@@ -178,21 +181,33 @@ jobs:
             - Band: ${{ env.BAND_NAME }} (902-928MHz)
 
             ### Flashing RX (ESP32-C3)
-            \`\`\`bash
-            esptool.py --chip esp32c3 write_flash \\
-                0x0 bootloader.bin \\
-                0x8000 partitions.bin \\
-                0xe000 boot_app0.bin \\
+            ```bash
+            esptool.py --chip esp32c3 write_flash \
+                0x0 bootloader_rx.bin \
+                0x8000 partitions_rx.bin \
+                0xe000 boot_app0_rx.bin \
                 0x10000 ELRS_*_RX_ESP32C3_*.bin
-            \`\`\`
+            ```
+
+            ### Flashing TX (ESP32)
+            ```bash
+            esptool.py --chip esp32 write_flash \
+                0x1000 bootloader_tx.bin \
+                0x8000 partitions_tx.bin \
+                0xe000 boot_app0_tx.bin \
+                0x10000 ELRS_*_TX_ESP32_*.bin
+            ```
 
             ---
             *Auto-built by GitHub Actions*
           files: |
-            bootloader.bin
-            partitions.bin
-            boot_app0.bin
+            bootloader_rx.bin
+            partitions_rx.bin
+            boot_app0_rx.bin
             ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32C3_${{ env.BAND_NAME }}.bin
+            bootloader_tx.bin
+            partitions_tx.bin
+            boot_app0_tx.bin
             ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin
             ESP32C3_SuperMini_RX.json
             ${{ env.MODULE_NAME }}_TX.json

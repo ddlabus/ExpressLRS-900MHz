@@ -151,12 +151,12 @@ jobs:
 
           if 'diy' not in targets:
               targets['diy'] = {}
-          if 'rx' not in targets['diy']:
-              targets['diy']['rx'] = {}
-          if 'tx' not in targets['diy']:
-              targets['diy']['tx'] = {}
+          if 'rx_900' not in targets['diy']:
+              targets['diy']['rx_900'] = {}
+          if 'tx_900' not in targets['diy']:
+              targets['diy']['tx_900'] = {}
 
-          targets['diy']['rx']['esp32_e32_900m30s'] = {
+          targets['diy']['rx_900']['esp32_e32_900m30s'] = {
               "product_name": "DIY ESP32 RX (E32-900M30S)",
               "lua_name": "ESP32 900 RX",
               "layout_file": "ESP32_E32-900M30S_RX.json",
@@ -165,7 +165,7 @@ jobs:
               "firmware": "Unified_ESP32_900_RX"
           }
 
-          targets['diy']['tx']['esp32_e32_900m30s_tx'] = {
+          targets['diy']['tx_900']['esp32_e32_900m30s_tx'] = {
               "product_name": "DIY ESP32 TX (E32-900M30S)",
               "lua_name": "ESP32 900 TX",
               "layout_file": "E32-900M30S_TX.json",
@@ -191,6 +191,7 @@ jobs:
         if: steps.check_built.outputs.should_build == 'true'
         working-directory: src
         run: |
+          sed -i '/\[env:Unified_ESP32_900_RX_via_UART\]/a board_config = diy.rx_900.esp32_e32_900m30s' targets/unified.ini
           pio run -e Unified_ESP32_900_RX_via_UART
           cp .pio/build/Unified_ESP32_900_RX_via_UART/firmware.bin \
              ../ELRS_${{ steps.elrs_release.outputs.tag }}_RX_ESP32_${{ env.BAND_NAME }}.bin
@@ -202,6 +203,7 @@ jobs:
         if: steps.check_built.outputs.should_build == 'true'
         working-directory: src
         run: |
+          sed -i '/\[env:Unified_ESP32_900_TX_via_UART\]/a board_config = diy.tx_900.esp32_e32_900m30s_tx' targets/unified.ini
           pio run -e Unified_ESP32_900_TX_via_UART
           cp .pio/build/Unified_ESP32_900_TX_via_UART/firmware.bin \
              ../ELRS_${{ steps.elrs_release.outputs.tag }}_TX_ESP32_${{ env.BAND_NAME }}.bin

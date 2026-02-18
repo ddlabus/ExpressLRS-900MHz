@@ -121,16 +121,36 @@ ESP32 WEMOS Lite           E32-900M30S
 2. Connect USB-C cable
 3. Release BOOT button
 
+**Full flash (virgin chip):**
 ```bash
-esptool.py --port /dev/ttyACM0 --baud 460800 \
-    --chip esp32c3 write_flash 0x0 ELRS_*_RX_ESP32C3_FCC915.bin
+esptool.py --chip esp32c3 --port /dev/ttyACM0 --baud 460800 write_flash \
+    0x0 bootloader_rx.bin \
+    0x8000 partitions_rx.bin \
+    0xe000 boot_app0_rx.bin \
+    0x10000 ELRS_*_RX_ESP32C3_FCC915.bin
+```
+
+**Update only (already has ELRS):**
+```bash
+esptool.py --chip esp32c3 --port /dev/ttyACM0 --baud 460800 \
+    write_flash 0x10000 ELRS_*_RX_ESP32C3_FCC915.bin
 ```
 
 ### TX (ESP32 WEMOS Lite)
 
+**Full flash (virgin chip):**
 ```bash
-esptool.py --port /dev/ttyUSB0 --baud 460800 \
-    --chip esp32 write_flash 0x0 ELRS_*_TX_ESP32_FCC915.bin
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 write_flash \
+    0x1000 bootloader_tx.bin \
+    0x8000 partitions_tx.bin \
+    0xe000 boot_app0_tx.bin \
+    0x10000 ELRS_*_TX_ESP32_FCC915.bin
+```
+
+**Update only (already has ELRS):**
+```bash
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
+    write_flash 0x10000 ELRS_*_TX_ESP32_FCC915.bin
 ```
 
 ### After Flashing
@@ -145,12 +165,24 @@ esptool.py --port /dev/ttyUSB0 --baud 460800 \
 See [Releases](https://github.com/ddlabus/ExpressLRS-900MHz/releases) for compiled firmware.
 
 ## Files
-| File | Description |
-|------|-------------|
-| `ELRS_*_RX_ESP32C3_FCC915.bin` | Receiver firmware (ESP32-C3) |
-| `ELRS_*_TX_ESP32_FCC915.bin` | Transmitter firmware |
-| `ESP32C3_SuperMini_RX.json` | RX hardware layout |
-| `E32-900M30S_TX.json` | TX hardware layout |
+
+### RX (ESP32-C3)
+| File | Description | Address |
+|------|-------------|---------|
+| `bootloader_rx.bin` | ESP32-C3 bootloader | 0x0 |
+| `partitions_rx.bin` | Partition table | 0x8000 |
+| `boot_app0_rx.bin` | Boot selector | 0xe000 |
+| `ELRS_*_RX_ESP32C3_FCC915.bin` | Receiver firmware | 0x10000 |
+| `ESP32C3_SuperMini_RX.json` | RX hardware layout | - |
+
+### TX (ESP32)
+| File | Description | Address |
+|------|-------------|---------|
+| `bootloader_tx.bin` | ESP32 bootloader | 0x1000 |
+| `partitions_tx.bin` | Partition table | 0x8000 |
+| `boot_app0_tx.bin` | Boot selector | 0xe000 |
+| `ELRS_*_TX_ESP32_FCC915.bin` | Transmitter firmware | 0x10000 |
+| `E32-900M30S_TX.json` | TX hardware layout | - |
 
 ---
 

@@ -1,4 +1,5 @@
 {
+    "platform": "esp32-c3",
     "product_name": "DIY ESP32-C3 SuperMini RX",
     "serial_rx": 20,
     "serial_tx": 21,
